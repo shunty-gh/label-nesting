@@ -1,0 +1,176 @@
+@page "/result"
+@using Shunty.LabelNesting.Core.Models
+@using Shunty.LabelNesting.Web.Services
+@inject NestingStateService StateService
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<PageTitle>Layout Result - Label Nesting</PageTitle>
+
+@if (StateService.Result is null)
+{
+    <div class="alert alert-warning">
+        <p>No layout result available. Please <a href="/input">configure a layout</a> first.</p>
+    </div>
+}
+else
+{
+    var result = StateService.Result;
+
+    <h2 class="mb-4">Layout Result</h2>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-primary">@result.PageCount</h3>
+                    <p class="text-muted mb-0">Pages</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-success">@result.TotalItemsPlaced</h3>
+                    <p class="text-muted mb-0">Items Placed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-info">@result.OverallEfficiency.ToString("P1")</h3>
+                    <p class="text-muted mb-0">Efficiency</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Items Summary</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Size (mm)</th>
+                                <th>Qty</th>
+                                <th>Placed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (var i = 0; i < StateService.Items.Count; i++)
+                            {
+                                var item = StateService.Items[i];
+                                var placed = result.Placements.Count(p => p.ItemIndex == i);
+                                <tr>
+                                    <td>@(i + 1)</td>
+                                    <td>@item.Width x @item.Height</td>
+                                    <td>@item.Quantity</td>
+                                    <td class="@(placed == item.Quantity ? "text-success" : "text-warning")">
+                                        @placed / @item.Quantity
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            @if (result.PageCount > 1)
+            {
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Page Breakdown</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Page</th>
+                                    <th>Items</th>
+                                    <th>Efficiency</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (var i = 0; i < result.PageCount; i++)
+                                {
+                                    var pageItems = result.GetPagePlacements(i).Count();
+                                    var efficiency = result.GetPageEfficiency(i);
+                                    <tr>
+                                        <td>@(i + 1)</td>
+                                        <td>@pageItems</td>
+                                        <td>@efficiency.ToString("P1")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">PDF Preview</h5>
+                </div>
+                <div class="card-body">
+                    @if (StateService.PdfBytes is not null)
+                    {
+                        <div class="ratio ratio-4x3 mb-3 bg-light">
+                            <iframe src="@GetPdfDataUrl()" title="PDF Preview"></iframe>
+                        </div>
+                        <button class="btn btn-primary w-100" @onclick="DownloadPdf">
+                            Download PDF
+                        </button>
+                    }
+                    else
+                    {
+                        <p class="text-muted">PDF preview not available.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-3">
+        <a href="/input" class="btn btn-outline-primary">New Layout</a>
+        <button class="btn btn-outline-secondary" @onclick="Reset">Start Over</button>
+    </div>
+}
+
+@code {
+    private string GetPdfDataUrl()
+    {
+        if (StateService.PdfBytes is null) return "";
+        var base64 = Convert.ToBase64String(StateService.PdfBytes);
+        return $"data:application/pdf;base64,{base64}";
+    }
+
+    private async Task DownloadPdf()
+    {
+        if (StateService.PdfBytes is null) return;
+
+        var base64 = Convert.ToBase64String(StateService.PdfBytes);
+        var fileName = $"label-nesting-{DateTime.Now:yyyyMMdd-HHmmss}.pdf";
+
+        await JS.InvokeVoidAsync("eval", $@"
+            const link = document.createElement('a');
+            link.href = 'data:application/pdf;base64,{base64}';
+            link.download = '{fileName}';
+            link.click();
+        ");
+    }
+
+    private void Reset()
+    {
+        StateService.Reset();
+        Navigation.NavigateTo("/input");
+    }
+}

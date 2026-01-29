@@ -1,0 +1,91 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch AppHost (Aspire)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/Shunty.LabelNesting.AppHost/bin/Debug/net10.0/Shunty.LabelNesting.AppHost.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/Shunty.LabelNesting.AppHost",
+            "console": "integratedTerminal",
+            "stopAtEntry": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_URLS": "https://localhost:17230",
+                "DOTNET_DASHBOARD_OTLP_ENDPOINT_URL": "https://localhost:21230",
+                "DOTNET_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:22230",
+                "DOTNET_ENVIRONMENT": "Development"
+            }
+        },
+        {
+            "name": "Launch Web (standalone)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/Shunty.LabelNesting.Web/bin/Debug/net10.0/Shunty.LabelNesting.Web.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/Shunty.LabelNesting.Web",
+            "console": "integratedTerminal",
+            "stopAtEntry": false,
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+            },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_URLS": "https://localhost:7230;http://localhost:5230"
+            }
+        },
+        {
+            "name": "Launch CLI (interactive)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/Shunty.LabelNesting.Cli/bin/Debug/net10.0/labelnest.dll",
+            "args": ["pack", "--interactive"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Launch CLI (batch)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/Shunty.LabelNesting.Cli/bin/Debug/net10.0/labelnest.dll",
+            "args": ["pack", "-p", "A4", "-i", "100,50,3", "-i", "75,25,5", "-o", "output.pdf"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Debug Unit Tests",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "dotnet",
+            "args": [
+                "test",
+                "${workspaceFolder}/tests/Shunty.LabelNesting.Tests/Shunty.LabelNesting.Tests.csproj",
+                "--no-build"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Attach to Process",
+            "type": "coreclr",
+            "request": "attach"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "AppHost + Attach",
+            "configurations": ["Launch AppHost (Aspire)"],
+            "stopAll": true
+        }
+    ]
+}

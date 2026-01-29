@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>Shunty.LabelNesting.Web</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Shunty.LabelNesting.Core\Shunty.LabelNesting.Core.csproj" />
+    <ProjectReference Include="..\Shunty.LabelNesting.ServiceDefaults\Shunty.LabelNesting.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+</Project>

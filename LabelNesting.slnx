@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Shunty.LabelNesting.AppHost/Shunty.LabelNesting.AppHost.csproj" />
+    <Project Path="src/Shunty.LabelNesting.Cli/Shunty.LabelNesting.Cli.csproj" />
+    <Project Path="src/Shunty.LabelNesting.Core/Shunty.LabelNesting.Core.csproj" />
+    <Project Path="src/Shunty.LabelNesting.ServiceDefaults/Shunty.LabelNesting.ServiceDefaults.csproj" />
+    <Project Path="src/Shunty.LabelNesting.Web/Shunty.LabelNesting.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Shunty.LabelNesting.Tests.E2E/Shunty.LabelNesting.Tests.E2E.csproj" />
+    <Project Path="tests/Shunty.LabelNesting.Tests/Shunty.LabelNesting.Tests.csproj" />
+  </Folder>
+</Solution>

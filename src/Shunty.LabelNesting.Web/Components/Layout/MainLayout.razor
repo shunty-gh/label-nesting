@@ -1,0 +1,21 @@
+@inherits LayoutComponentBase
+
+<div class="container-fluid">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">Label Nesting</a>
+            <div class="navbar-nav">
+                <a class="nav-link" href="/">Home</a>
+                <a class="nav-link" href="/input">New Layout</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        @Body
+    </main>
+
+    <footer class="container text-center text-muted mt-4 py-3">
+        <small>Label Nesting - Optimize rectangular item placement on paper</small>
+    </footer>
+</div>

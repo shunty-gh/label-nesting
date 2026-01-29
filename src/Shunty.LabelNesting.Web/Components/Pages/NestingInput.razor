@@ -1,0 +1,275 @@
+@page "/input"
+@using Shunty.LabelNesting.Core.Algorithms
+@using Shunty.LabelNesting.Core.Models
+@using Shunty.LabelNesting.Core.Services
+@using Shunty.LabelNesting.Core.Validation
+@using Shunty.LabelNesting.Web.Services
+@inject NestingStateService StateService
+@inject NavigationManager Navigation
+@inject IPackingAlgorithm PackingAlgorithm
+@inject IPdfGenerator PdfGenerator
+@rendermode InteractiveServer
+
+<PageTitle>Configure Layout - Label Nesting</PageTitle>
+
+<h2 class="mb-4">Configure Layout</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Paper Settings</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Paper Size</label>
+                    <select class="form-select" @bind="selectedPaperSize">
+                        @foreach (var size in PaperSize.StandardSizes)
+                        {
+                            <option value="@size.Name">@size.Name (@size.Width x @size.Height mm)</option>
+                        }
+                        <option value="Custom">Custom</option>
+                    </select>
+                </div>
+
+                @if (selectedPaperSize == "Custom")
+                {
+                    <div class="row">
+                        <div class="col">
+                            <label class="form-label">Width (mm)</label>
+                            <input type="number" class="form-control" @bind="customWidth" min="1" />
+                        </div>
+                        <div class="col">
+                            <label class="form-label">Height (mm)</label>
+                            <input type="number" class="form-control" @bind="customHeight" min="1" />
+                        </div>
+                    </div>
+                }
+
+                <hr />
+
+                <div class="mb-3">
+                    <label class="form-label">Margin (mm)</label>
+                    <input type="number" class="form-control" @bind="margin" min="0" step="0.5" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Gutter - space between items (mm)</label>
+                    <input type="number" class="form-control" @bind="gutter" min="0" step="0.5" />
+                </div>
+
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" @bind="allowRotation" id="rotationCheck" />
+                    <label class="form-check-label" for="rotationCheck">
+                        Allow item rotation
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Items</h5>
+                <span class="badge bg-secondary">@items.Count items</span>
+            </div>
+            <div class="card-body">
+                <div class="row g-2 mb-3">
+                    <div class="col-4">
+                        <input type="number" class="form-control" placeholder="Width" @bind="newItemWidth" min="1" />
+                    </div>
+                    <div class="col-4">
+                        <input type="number" class="form-control" placeholder="Height" @bind="newItemHeight" min="1" />
+                    </div>
+                    <div class="col-2">
+                        <input type="number" class="form-control" placeholder="Qty" @bind="newItemQuantity" min="1" />
+                    </div>
+                    <div class="col-2">
+                        <button class="btn btn-primary w-100" @onclick="AddItem">Add</button>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(itemError))
+                {
+                    <div class="alert alert-danger py-2">@itemError</div>
+                }
+
+                @if (items.Count > 0)
+                {
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Size (mm)</th>
+                                <th>Qty</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (var i = 0; i < items.Count; i++)
+                            {
+                                var index = i;
+                                var item = items[i];
+                                <tr>
+                                    <td>@(i + 1)</td>
+                                    <td>@item.Width x @item.Height</td>
+                                    <td>@item.Quantity</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveItem(index)">
+                                            Remove
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p class="text-muted">No items added yet. Add items using the form above.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(globalError))
+{
+    <div class="alert alert-danger">@globalError</div>
+}
+
+<div class="d-flex gap-2">
+    <button class="btn btn-success btn-lg" @onclick="GenerateLayout" disabled="@(items.Count == 0 || isProcessing)">
+        @if (isProcessing)
+        {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+        }
+        Generate Layout
+    </button>
+    <button class="btn btn-outline-secondary" @onclick="Reset">Reset</button>
+</div>
+
+@code {
+    private string selectedPaperSize = "A4";
+    private double customWidth = 200;
+    private double customHeight = 300;
+    private double margin = 5;
+    private double gutter = 2;
+    private bool allowRotation = true;
+
+    private double newItemWidth = 100;
+    private double newItemHeight = 50;
+    private int newItemQuantity = 1;
+
+    private List<Item> items = [];
+    private string? itemError;
+    private string? globalError;
+    private bool isProcessing;
+
+    private PaperSize GetPaperSize()
+    {
+        if (selectedPaperSize == "Custom")
+        {
+            return PaperSize.Custom(customWidth, customHeight);
+        }
+        return PaperSize.Parse(selectedPaperSize);
+    }
+
+    private PackingConfiguration GetConfiguration() => new(margin, gutter, allowRotation);
+
+    private void AddItem()
+    {
+        itemError = null;
+
+        if (newItemWidth <= 0 || newItemHeight <= 0)
+        {
+            itemError = "Width and height must be positive.";
+            return;
+        }
+
+        if (newItemQuantity <= 0)
+        {
+            itemError = "Quantity must be at least 1.";
+            return;
+        }
+
+        var item = new Item(newItemWidth, newItemHeight, newItemQuantity);
+        var config = GetConfiguration();
+        var paperSize = GetPaperSize();
+
+        if (!config.CanFit(item, paperSize))
+        {
+            itemError = $"Item {item.Width}x{item.Height}mm is too large for the selected paper size.";
+            return;
+        }
+
+        items.Add(item);
+        newItemQuantity = 1;
+    }
+
+    private void RemoveItem(int index)
+    {
+        if (index >= 0 && index < items.Count)
+        {
+            items.RemoveAt(index);
+        }
+    }
+
+    private async Task GenerateLayout()
+    {
+        globalError = null;
+        isProcessing = true;
+
+        try
+        {
+            await Task.Yield(); // Allow UI to update
+
+            var paperSize = GetPaperSize();
+            var config = GetConfiguration();
+
+            // Validate all items
+            var errors = ItemValidator.ValidateItems(items, paperSize, config);
+            if (errors.Count > 0)
+            {
+                globalError = string.Join(" ", errors);
+                return;
+            }
+
+            // Pack items
+            var result = PackingAlgorithm.Pack(items, paperSize, config);
+
+            // Generate PDF
+            var pdfBytes = PdfGenerator.GenerateBytes(result);
+
+            // Update state and navigate
+            StateService.PaperSize = paperSize;
+            StateService.Configuration = config;
+            StateService.Items = [.. items];
+            StateService.Result = result;
+            StateService.PdfBytes = pdfBytes;
+            StateService.NotifyStateChanged();
+
+            Navigation.NavigateTo("/result");
+        }
+        catch (Exception ex)
+        {
+            globalError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private void Reset()
+    {
+        items.Clear();
+        itemError = null;
+        globalError = null;
+        selectedPaperSize = "A4";
+        margin = 5;
+        gutter = 2;
+        allowRotation = true;
+    }
+}

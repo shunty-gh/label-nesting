@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  labelnesting-web:
+    image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_USERNAME:-yourusername}/label-nesting-web:${VERSION:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: label-nesting-web
+    restart: unless-stopped
+
+    # Caddy-docker-proxy labels
+    labels:
+      caddy: labels.shunty.net
+      caddy.reverse_proxy: "{{upstreams 8080}}"
+      caddy.encode: gzip
+      caddy.header.Strict-Transport-Security: "max-age=31536000; includeSubDomains; preload"
+      caddy.header.X-Content-Type-Options: "nosniff"
+      caddy.header.X-Frame-Options: "SAMEORIGIN"
+      caddy.header.X-XSS-Protection: "1; mode=block"
+
+    # Environment variables
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
+      - ASPNETCORE_URLS=http://+:8080
+      # OTEL configuration (if needed)
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT}
+      - OTEL_EXPORTER_OTLP_HEADERS=${OTEL_EXPORTER_OTLP_HEADERS}
+      - OTEL_SERVICE_NAME=label-nesting-web
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    # Networks - connect to Caddy reverse proxy network
+    networks:
+      - caddy
+      - internal
+
+networks:
+  # External network for Caddy reverse proxy (caddy-docker-proxy)
+  caddy:
+    external: true
+    name: caddy
+
+  # Internal network for service-to-service communication
+  internal:
+    driver: bridge
+
+# Volumes for persistent data (if needed in future)
+volumes:
+  app-data:
+    driver: local

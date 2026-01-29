@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Shunty.LabelNesting.Cli</RootNamespace>
+    <AssemblyName>labelnest</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Spectre.Console" />
+    <PackageReference Include="Spectre.Console.Cli" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Shunty.LabelNesting.Core\Shunty.LabelNesting.Core.csproj" />
+  </ItemGroup>
+
+</Project>
