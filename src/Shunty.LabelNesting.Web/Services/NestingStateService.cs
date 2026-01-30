@@ -12,6 +12,7 @@ public sealed class NestingStateService
     public List<Item> Items { get; set; } = [];
     public PackingResult? Result { get; set; }
     public byte[]? PdfBytes { get; set; }
+    public string? LayoutJson { get; set; }
 
     public event Action? OnStateChanged;
 
@@ -24,6 +25,7 @@ public sealed class NestingStateService
         Items = [];
         Result = null;
         PdfBytes = null;
+        LayoutJson = null;
         NotifyStateChanged();
     }
 }

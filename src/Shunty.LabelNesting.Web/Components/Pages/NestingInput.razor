@@ -1,5 +1,6 @@
 @page "/input"
 @using Shunty.LabelNesting.Core.Algorithms
+@using Shunty.LabelNesting.Core.Extensions
 @using Shunty.LabelNesting.Core.Models
 @using Shunty.LabelNesting.Core.Services
 @using Shunty.LabelNesting.Core.Validation
@@ -242,12 +243,16 @@
             // Generate PDF
             var pdfBytes = PdfGenerator.GenerateBytes(result);
 
+            // Generate JSON layout
+            var layoutJson = result.ToJson(items, indented: true, generator: "Label Nesting Web");
+
             // Update state and navigate
             StateService.PaperSize = paperSize;
             StateService.Configuration = config;
             StateService.Items = [.. items];
             StateService.Result = result;
             StateService.PdfBytes = pdfBytes;
+            StateService.LayoutJson = layoutJson;
             StateService.NotifyStateChanged();
 
             Navigation.NavigateTo("/result");

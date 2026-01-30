@@ -1,5 +1,6 @@
 using Shunty.LabelNesting.Cli.Interactive;
 using Shunty.LabelNesting.Core.Algorithms;
+using Shunty.LabelNesting.Core.Extensions;
 using Shunty.LabelNesting.Core.Models;
 using Shunty.LabelNesting.Core.Services;
 using Shunty.LabelNesting.Core.Validation;
@@ -128,6 +129,18 @@ public sealed class PackCommand : Command<PackCommandSettings>
             });
 
         AnsiConsole.MarkupLine($"\n[green]PDF saved to: {outputPath}[/]");
+
+        // Generate JSON layout file
+        var jsonPath = Path.ChangeExtension(outputPath, ".json");
+        AnsiConsole.Status()
+            .Start("Generating JSON layout...", ctx =>
+            {
+                ctx.Spinner(Spinner.Known.Dots);
+                var json = result.ToJson(items, indented: true, generator: "Label Nesting CLI");
+                File.WriteAllText(jsonPath, json);
+            });
+
+        AnsiConsole.MarkupLine($"[green]JSON layout saved to: {jsonPath}[/]");
 
         return 0;
     }

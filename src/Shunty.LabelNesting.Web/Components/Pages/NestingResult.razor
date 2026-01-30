@@ -48,6 +48,31 @@ else
     </div>
 
     <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Equivalent CLI Command</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <small class="text-muted">Use this command to reproduce the same layout from the command line:</small>
+                    </div>
+                    <div class="bg-light p-3 rounded position-relative">
+                        <pre class="mb-0" style="white-space: pre-wrap; word-break: break-all;"><code>@GetCliCommand()</code></pre>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary mt-2" @onclick="CopyCliCommand">
+                        Copy Command
+                    </button>
+                    @if (!string.IsNullOrEmpty(cliCopyMessage))
+                    {
+                        <span class="text-success ms-2">@cliCopyMessage</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
         <div class="col-md-6">
             <div class="card mb-4">
                 <div class="card-header">
@@ -136,6 +161,36 @@ else
                     }
                 </div>
             </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">JSON Layout</h5>
+                </div>
+                <div class="card-body">
+                    @if (StateService.LayoutJson is not null)
+                    {
+                        <div class="mb-3">
+                            <pre class="bg-light p-3 rounded" style="max-height: 400px; overflow-y: auto; font-size: 0.85rem;"><code>@StateService.LayoutJson</code></pre>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-primary" @onclick="CopyJson">
+                                Copy to Clipboard
+                            </button>
+                            <button class="btn btn-outline-secondary" @onclick="DownloadJson">
+                                Download JSON
+                            </button>
+                        </div>
+                        @if (!string.IsNullOrEmpty(copyMessage))
+                        {
+                            <div class="alert alert-success mt-2 py-2">@copyMessage</div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted">JSON layout not available.</p>
+                    }
+                </div>
+            </div>
         </div>
     </div>
 
@@ -146,6 +201,61 @@ else
 }
 
 @code {
+    private string? copyMessage;
+    private string? cliCopyMessage;
+
+    private string GetCliCommand()
+    {
+        var parts = new List<string> { "labelnest pack" };
+
+        // Paper size
+        parts.Add($"-p {StateService.PaperSize}");
+
+        // Items
+        foreach (var item in StateService.Items)
+        {
+            parts.Add($"-i {item.Width},{item.Height},{item.Quantity}");
+        }
+
+        // Configuration (only if non-default)
+        if (StateService.Configuration.Margin != 5.0)
+        {
+            parts.Add($"--margin {StateService.Configuration.Margin}");
+        }
+        if (StateService.Configuration.Gutter != 2.0)
+        {
+            parts.Add($"--gutter {StateService.Configuration.Gutter}");
+        }
+        if (!StateService.Configuration.AllowRotation)
+        {
+            parts.Add("--no-rotation");
+        }
+
+        // Output
+        parts.Add("-o output.pdf");
+
+        return string.Join(" ", parts);
+    }
+
+    private async Task CopyCliCommand()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", GetCliCommand());
+            cliCopyMessage = "✓ Copied!";
+            StateHasChanged();
+
+            // Clear message after 3 seconds
+            await Task.Delay(3000);
+            cliCopyMessage = null;
+            StateHasChanged();
+        }
+        catch
+        {
+            cliCopyMessage = "✗ Failed to copy";
+        }
+    }
+
     private string GetPdfDataUrl()
     {
         if (StateService.PdfBytes is null) return "";
@@ -163,6 +273,43 @@ else
         await JS.InvokeVoidAsync("eval", $@"
             const link = document.createElement('a');
             link.href = 'data:application/pdf;base64,{base64}';
+            link.download = '{fileName}';
+            link.click();
+        ");
+    }
+
+    private async Task CopyJson()
+    {
+        if (StateService.LayoutJson is null) return;
+
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", StateService.LayoutJson);
+            copyMessage = "✓ Copied to clipboard!";
+            StateHasChanged();
+
+            // Clear message after 3 seconds
+            await Task.Delay(3000);
+            copyMessage = null;
+            StateHasChanged();
+        }
+        catch
+        {
+            copyMessage = "✗ Failed to copy. Please try downloading instead.";
+        }
+    }
+
+    private async Task DownloadJson()
+    {
+        if (StateService.LayoutJson is null) return;
+
+        var fileName = $"label-nesting-{DateTime.Now:yyyyMMdd-HHmmss}.json";
+        var bytes = System.Text.Encoding.UTF8.GetBytes(StateService.LayoutJson);
+        var base64 = Convert.ToBase64String(bytes);
+
+        await JS.InvokeVoidAsync("eval", $@"
+            const link = document.createElement('a');
+            link.href = 'data:application/json;base64,{base64}';
             link.download = '{fileName}';
             link.click();
         ");
