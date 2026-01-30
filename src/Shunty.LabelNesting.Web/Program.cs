@@ -22,18 +22,26 @@ builder.Services.AddLabelNestingCore();
 builder.Services.AddScoped<NestingStateService>();
 
 // Configure forwarded headers for reverse proxy support
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
+// Only enable in Production when behind a reverse proxy
+if (!builder.Environment.IsDevelopment())
 {
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    // Allow any proxy - this is necessary for Docker/Kubernetes deployments
-    options.KnownIPNetworks.Clear();
-    options.KnownProxies.Clear();
-});
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        // Allow any proxy - this is necessary for Docker/Kubernetes deployments
+        // Note: In production, consider restricting to known proxy IPs if they are static
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+    });
+}
 
 var app = builder.Build();
 
-// Use forwarded headers before other middleware
-app.UseForwardedHeaders();
+// Use forwarded headers before other middleware (only in non-development)
+if (!app.Environment.IsDevelopment())
+{
+    app.UseForwardedHeaders();
+}
 
 if (!app.Environment.IsDevelopment())
 {
