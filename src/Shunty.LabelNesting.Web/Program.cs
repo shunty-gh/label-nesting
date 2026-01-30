@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Shunty.LabelNesting.Core.Extensions;
 using Shunty.LabelNesting.Web.Components;
 using Shunty.LabelNesting.Web.HealthChecks;
@@ -20,7 +21,27 @@ builder.Services.AddRazorComponents()
 builder.Services.AddLabelNestingCore();
 builder.Services.AddScoped<NestingStateService>();
 
+// Configure forwarded headers for reverse proxy support
+// Only enable in Production when behind a reverse proxy
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        // Allow any proxy - this is necessary for Docker/Kubernetes deployments
+        // Note: In production, consider restricting to known proxy IPs if they are static
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+    });
+}
+
 var app = builder.Build();
+
+// Use forwarded headers before other middleware (only in non-development)
+if (!app.Environment.IsDevelopment())
+{
+    app.UseForwardedHeaders();
+}
 
 if (!app.Environment.IsDevelopment())
 {
@@ -29,7 +50,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+app.MapStaticAssets();
 app.UseAntiforgery();
 
 app.MapRazorComponents<App>()

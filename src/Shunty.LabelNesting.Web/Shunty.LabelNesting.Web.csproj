@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <RootNamespace>Shunty.LabelNesting.Web</RootNamespace>
+    <RequiresAspNetWebAssets>true</RequiresAspNetWebAssets>
   </PropertyGroup>
 
   <ItemGroup>
