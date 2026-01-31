@@ -149,7 +149,11 @@ else
                     @if (StateService.PdfBytes is not null)
                     {
                         <div class="ratio ratio-4x3 mb-3 bg-light">
-                            <iframe src="@GetPdfDataUrl()" title="PDF Preview"></iframe>
+                            <object data="@GetPdfDataUrl()#toolbar=1&navpanes=1&scrollbar=1" type="application/pdf" style="width: 100%; height: 100%;">
+                                <iframe src="@GetPdfDataUrl()#toolbar=1&navpanes=1&scrollbar=1" style="width: 100%; height: 100%; border: none;">
+                                    <p>Your browser does not support embedded PDFs. Please download the PDF to view it.</p>
+                                </iframe>
+                            </object>
                         </div>
                         <button class="btn btn-primary w-100" @onclick="DownloadPdf">
                             Download PDF
