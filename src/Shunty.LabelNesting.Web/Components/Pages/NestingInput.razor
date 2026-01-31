@@ -168,6 +168,33 @@
     private string? globalError;
     private bool isProcessing;
 
+    protected override void OnInitialized()
+    {
+        // Load state from StateService if available
+        if (StateService.Items.Count > 0)
+        {
+            items = [.. StateService.Items];
+            margin = StateService.Configuration.Margin;
+            gutter = StateService.Configuration.Gutter;
+            allowRotation = StateService.Configuration.AllowRotation;
+
+            // Set paper size
+            var standardSize = PaperSize.StandardSizes.FirstOrDefault(s => 
+                s.Width == StateService.PaperSize.Width && s.Height == StateService.PaperSize.Height);
+            
+            if (!string.IsNullOrEmpty(standardSize.Name))
+            {
+                selectedPaperSize = standardSize.Name;
+            }
+            else
+            {
+                selectedPaperSize = "Custom";
+                customWidth = StateService.PaperSize.Width;
+                customHeight = StateService.PaperSize.Height;
+            }
+        }
+    }
+
     private PaperSize GetPaperSize()
     {
         if (selectedPaperSize == "Custom")

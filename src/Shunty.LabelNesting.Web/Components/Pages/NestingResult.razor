@@ -195,8 +195,8 @@ else
     </div>
 
     <div class="d-flex gap-2 mt-3">
-        <a href="/input" class="btn btn-outline-primary">New Layout</a>
-        <button class="btn btn-outline-secondary" @onclick="Reset">Start Over</button>
+        <a href="/input" class="btn btn-outline-primary">Edit Layout</a>
+        <button class="btn btn-outline-secondary" @onclick="StartNewLayout">New Layout</button>
     </div>
 }
 
@@ -315,7 +315,7 @@ else
         ");
     }
 
-    private void Reset()
+    private void StartNewLayout()
     {
         StateService.Reset();
         Navigation.NavigateTo("/input");
