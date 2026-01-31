@@ -148,9 +148,10 @@ else
                 <div class="card-body">
                     @if (StateService.PdfBytes is not null)
                     {
+                        var pdfUrl = GetPdfDataUrlWithParams();
                         <div class="ratio ratio-4x3 mb-3 bg-light">
-                            <object data="@GetPdfDataUrlWithParams()" type="application/pdf" style="width: 100%; height: 100%;">
-                                <iframe src="@GetPdfDataUrlWithParams()" style="width: 100%; height: 100%; border: none;">
+                            <object data="@pdfUrl" type="application/pdf" style="width: 100%; height: 100%;">
+                                <iframe src="@pdfUrl" style="width: 100%; height: 100%; border: none;">
                                     <p>Your browser does not support embedded PDFs. Please download the PDF to view it.</p>
                                 </iframe>
                             </object>
@@ -262,7 +263,7 @@ else
 
     private string GetPdfDataUrl()
     {
-        if (StateService.PdfBytes is null) return "";
+        if (StateService.PdfBytes is null || StateService.PdfBytes.Length == 0) return "";
         var base64 = Convert.ToBase64String(StateService.PdfBytes);
         return $"data:application/pdf;base64,{base64}";
     }
