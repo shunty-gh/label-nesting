@@ -182,7 +182,7 @@
             var standardSize = PaperSize.StandardSizes.FirstOrDefault(s => 
                 s.Width == StateService.PaperSize.Width && s.Height == StateService.PaperSize.Height);
             
-            if (standardSize.Name is not null && standardSize.Name != "")
+            if (!string.IsNullOrEmpty(standardSize.Name))
             {
                 selectedPaperSize = standardSize.Name;
             }
