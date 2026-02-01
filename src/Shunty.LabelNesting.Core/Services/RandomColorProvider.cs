@@ -35,10 +35,9 @@ public sealed class RandomColorProvider : IColorProvider
 
     public string GetNextColor()
     {
-        var color = Palette[_currentIndex];
-        _currentIndex = (_currentIndex + 1) % Palette.Length;
-        return color;
+        var index = Interlocked.Increment(ref _currentIndex) - 1;
+        return Palette[((index % Palette.Length) + Palette.Length) % Palette.Length];
     }
 
-    public void Reset() => _currentIndex = 0;
+    public void Reset() => Interlocked.Exchange(ref _currentIndex, 0);
 }

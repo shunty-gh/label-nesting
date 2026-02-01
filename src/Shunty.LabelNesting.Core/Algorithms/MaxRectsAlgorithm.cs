@@ -182,7 +182,7 @@ public sealed class MaxRectsAlgorithm(IColorProvider colorProvider, PackingHeuri
     private static void SplitFreeRects(List<FreeRect> freeRects, double x, double y, double width, double height)
     {
         var newRects = new List<FreeRect>();
-        var toRemove = new List<int>();
+        var surviving = new List<FreeRect>();
 
         for (var i = 0; i < freeRects.Count; i++)
         {
@@ -191,10 +191,9 @@ public sealed class MaxRectsAlgorithm(IColorProvider colorProvider, PackingHeuri
             // Check if the placed item intersects with this free rect
             if (!Intersects(rect, x, y, width, height))
             {
+                surviving.Add(rect);
                 continue;
             }
-
-            toRemove.Add(i);
 
             // Split into up to 4 new rectangles
 
@@ -223,17 +222,14 @@ public sealed class MaxRectsAlgorithm(IColorProvider colorProvider, PackingHeuri
             }
         }
 
-        // Remove intersected rects in reverse order to maintain indices
-        for (var i = toRemove.Count - 1; i >= 0; i--)
-        {
-            freeRects.RemoveAt(toRemove[i]);
-        }
-
-        // Add new rects
+        // Rebuild freeRects: surviving rects first, then new rects
+        freeRects.Clear();
+        freeRects.AddRange(surviving);
+        var firstNewIndex = freeRects.Count;
         freeRects.AddRange(newRects);
 
-        // Remove redundant rectangles (those fully contained in another)
-        PruneFreeRects(freeRects);
+        // Only prune new rects against all others (existing rects are already mutually pruned)
+        PruneFreeRects(freeRects, firstNewIndex);
     }
 
     private static bool Intersects(FreeRect rect, double x, double y, double width, double height)
@@ -244,14 +240,41 @@ public sealed class MaxRectsAlgorithm(IColorProvider colorProvider, PackingHeuri
                y + height > rect.Y;
     }
 
-    private static void PruneFreeRects(List<FreeRect> freeRects)
+    /// <summary>
+    /// Prune redundant free rectangles. Only new rectangles (from firstNewIndex onwards)
+    /// are checked against all others, since existing rectangles were already mutually pruned.
+    /// This reduces complexity from O(m²) to O(newCount × m) per placement.
+    /// </summary>
+    private static void PruneFreeRects(List<FreeRect> freeRects, int firstNewIndex)
     {
         var toRemove = new HashSet<int>();
 
-        for (var i = 0; i < freeRects.Count; i++)
+        for (var i = firstNewIndex; i < freeRects.Count; i++)
         {
             if (toRemove.Contains(i)) continue;
 
+            // Check new rect against surviving existing rects
+            for (var j = 0; j < firstNewIndex; j++)
+            {
+                if (toRemove.Contains(j)) continue;
+
+                if (Contains(freeRects[j], freeRects[i]))
+                {
+                    // New rect is fully inside an existing rect — remove new
+                    toRemove.Add(i);
+                    break;
+                }
+
+                if (Contains(freeRects[i], freeRects[j]))
+                {
+                    // Existing rect is fully inside the new rect — remove existing
+                    toRemove.Add(j);
+                }
+            }
+
+            if (toRemove.Contains(i)) continue;
+
+            // Check new rect against other new rects
             for (var j = i + 1; j < freeRects.Count; j++)
             {
                 if (toRemove.Contains(j)) continue;
@@ -268,6 +291,7 @@ public sealed class MaxRectsAlgorithm(IColorProvider colorProvider, PackingHeuri
             }
         }
 
+        // Remove in reverse order to preserve indices
         foreach (var i in toRemove.OrderByDescending(x => x))
         {
             freeRects.RemoveAt(i);
