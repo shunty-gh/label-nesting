@@ -9,6 +9,7 @@
         "dotnet workload": true,
         "dotnet clean": true,
         "dotnet build": true,
-        ".\\labelnest.exe": true
+        ".\\labelnest.exe": true,
+        "dotnet dev-certs": true
     }
 }
