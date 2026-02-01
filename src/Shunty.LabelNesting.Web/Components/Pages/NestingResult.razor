@@ -270,12 +270,7 @@ else
         var base64 = Convert.ToBase64String(StateService.PdfBytes);
         var fileName = $"label-nesting-{DateTime.Now:yyyyMMdd-HHmmss}.pdf";
 
-        await JS.InvokeVoidAsync("eval", $@"
-            const link = document.createElement('a');
-            link.href = 'data:application/pdf;base64,{base64}';
-            link.download = '{fileName}';
-            link.click();
-        ");
+        await JS.InvokeVoidAsync("downloadFileFromBase64", fileName, "application/pdf", base64);
     }
 
     private async Task CopyJson()
@@ -307,12 +302,7 @@ else
         var bytes = System.Text.Encoding.UTF8.GetBytes(StateService.LayoutJson);
         var base64 = Convert.ToBase64String(bytes);
 
-        await JS.InvokeVoidAsync("eval", $@"
-            const link = document.createElement('a');
-            link.href = 'data:application/json;base64,{base64}';
-            link.download = '{fileName}';
-            link.click();
-        ");
+        await JS.InvokeVoidAsync("downloadFileFromBase64", fileName, "application/json", base64);
     }
 
     private void StartNewLayout()
