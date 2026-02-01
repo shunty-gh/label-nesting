@@ -7,7 +7,6 @@
     <Project Path="src/Shunty.LabelNesting.Web/Shunty.LabelNesting.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/Shunty.LabelNesting.Tests.E2E/Shunty.LabelNesting.Tests.E2E.csproj" />
     <Project Path="tests/Shunty.LabelNesting.Tests/Shunty.LabelNesting.Tests.csproj" />
   </Folder>
 </Solution>
